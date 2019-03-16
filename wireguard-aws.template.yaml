@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: "2010-09-09"
-Description: WireGuard server
+Description: WireGuard VPN server
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -22,14 +22,19 @@ Metadata:
           - ServerPort
           - PrivateKey
           - PreSharedKey
+          - Peer1Name
           - Peer1PublicKey
           - Peer1IP
+          - Peer2Name
           - Peer2PublicKey
           - Peer2IP
+          - Peer3Name
           - Peer3PublicKey
           - Peer3IP
+          - Peer4Name
           - Peer4PublicKey
           - Peer4IP
+          - Peer5Name
           - Peer5PublicKey
           - Peer5IP
 
@@ -116,7 +121,7 @@ Parameters:
 
   ServerIP:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
-    Default: 10.200.200.1/24
+    Default: 10.200.200.254/24
     Description: IP and netmask of WireGuard server (eg 10.200.200.1/24)
     ConstraintDescription: Must be an IP inside the VPNSubnet range
     Type: String
@@ -139,51 +144,76 @@ Parameters:
     Type: String
     NoEcho: true
 
+  Peer1Name:
+    Description: Friendly name of peer 1
+    Default: Peer1
+    Type: String
+
   Peer1PublicKey:
     Description: Public Key for peer 1
     Type: String
 
   Peer1IP:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: 10.200.200.1/32
+    Description: IP and netmask of allowed WireGuard peer (eg 10.200.200.2/32)
+    ConstraintDescription: Must be an IP inside the ServerIP range
+    Type: String
+
+  Peer2Name:
+    Description: Friendly name of peer 2
+    Default: Peer2
+    Type: String
+
+  Peer2PublicKey:
+    Description: Public Key for peer 2
+    Type: String
+    Default: ''
+
+  Peer2IP:
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: 10.200.200.2/32
     Description: IP and netmask of allowed WireGuard peer (eg 10.200.200.2/32)
     ConstraintDescription: Must be an IP inside the ServerIP range
     Type: String
 
-  Peer2PublicKey:
-    Description: Public Key for peer 1
+  Peer3Name:
+    Description: Friendly name of peer 3
+    Default: Peer3
+    Type: String
+
+  Peer3PublicKey:
+    Description: Public Key for peer 3
     Type: String
     Default: ''
 
-  Peer2IP:
+  Peer3IP:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: 10.200.200.3/32
     Description: IP and netmask of allowed WireGuard peer (eg 10.200.200.2/32)
     ConstraintDescription: Must be an IP inside the ServerIP range
     Type: String
 
-  Peer3PublicKey:
-    Description: Public Key for peer 1
+  Peer4Name:
+    Description: Friendly name of peer 4
+    Default: Peer4
+    Type: String
+
+  Peer4PublicKey:
+    Description: Public Key for peer 4
     Type: String
     Default: ''
 
-  Peer3IP:
+  Peer4IP:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: 10.200.200.4/32
     Description: IP and netmask of allowed WireGuard peer (eg 10.200.200.2/32)
     ConstraintDescription: Must be an IP inside the ServerIP range
     Type: String
 
-  Peer4PublicKey:
-    Description: Public Key for peer 1
-    Type: String
-    Default: ''
-
-  Peer4IP:
-    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
-    Default: 10.200.200.5/32
-    Description: IP and netmask of allowed WireGuard peer (eg 10.200.200.2/32)
-    ConstraintDescription: Must be an IP inside the ServerIP range
+  Peer5Name:
+    Description: Friendly name of peer 5
+    Default: Peer5
     Type: String
 
   Peer5PublicKey:
@@ -193,7 +223,7 @@ Parameters:
 
   Peer5IP:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
-    Default: 10.200.200.6/32
+    Default: 10.200.200.5/32
     Description: IP and netmask of allowed WireGuard peer (eg 10.200.200.2/32)
     ConstraintDescription: Must be an IP inside the ServerIP range
     Type: String
@@ -757,9 +787,57 @@ Resources:
       - !Ref IPAddress
 
 Outputs:
-  VPNServerURL:
-    Description: WireGuard VPN Server URL
-    Value: !Sub ${IPAddress}:51280
   VPNServerDNSName:
     Description: WireGuard VPN Server DNS Name
     Value: !Sub ${DNSRecord}
+  ServerIPandMask:
+    Description: WireGuard VPN Server internal IP Address and network mask
+    Value: !Sub ${ServerIP}
+  ServerPort:
+    Description: WireGuard VPN Server Port
+    Value: !Sub ${ServerPort}
+  Peer1Name:
+    Description: Friendly name of peer 1
+    Value: !Sub ${Peer1Name}
+  Peer1PublicKey:
+    Description: Public key of peer 1
+    Value: !Sub ${Peer1PublicKey}
+  Peer1IPandMask:
+    Description: Internal IP and network mask of peer 1
+    Value: !Sub ${Peer1IP}
+  Peer2Name:
+    Description: Friendly name of peer 2
+    Value: !Sub ${Peer2Name}
+  Peer2PublicKey:
+    Description: Public key of peer 2
+    Value: !Sub ${Peer2PublicKey}
+  Peer2IPandMask:
+    Description: Internal IP and network mask of peer 2
+    Value: !Sub ${Peer2IP}
+  Peer3Name:
+    Description: Friendly name of peer 3
+    Value: !Sub ${Peer3Name}
+  Peer3PublicKey:
+    Description: Public key of peer 3
+    Value: !Sub ${Peer3PublicKey}
+  Peer3IPandMask:
+    Description: Internal IP and network mask of peer 3
+    Value: !Sub ${Peer3IP}
+  Peer4Name:
+    Description: Friendly name of peer 4
+    Value: !Sub ${Peer4Name}
+  Peer4PublicKey:
+    Description: Public key of peer 4
+    Value: !Sub ${Peer4PublicKey}
+  Peer4IPandMask:
+    Description: Internal IP and network mask of peer 4
+    Value: !Sub ${Peer4IP}
+  Peer5Name:
+    Description: Friendly name of peer 5
+    Value: !Sub ${Peer5Name}
+  Peer5PublicKey:
+    Description: Public key of peer 5
+    Value: !Sub ${Peer5PublicKey}
+  Peer5IPandMask:
+    Description: Internal IP and network mask of peer 5
+    Value: !Sub ${Peer5IP}
