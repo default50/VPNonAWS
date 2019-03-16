@@ -31,14 +31,13 @@ Parameters:
       - t2.large
       - t2.xlarge
       - t2.2xlarge
-      # OpenVPN AMIs still don't support required ENA for T3s
-      # - t3.nano
-      # - t3.micro
-      # - t3.small
-      # - t3.medium
-      # - t3.large
-      # - t3.xlarge
-      # - t3.2xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
     Default: t2.medium
 
   KeyName:
@@ -89,52 +88,38 @@ Conditions:
 
 Mappings:
   AWSRegionArch2AMI:
-    # Software version 2.5.0 - 22/03/2018
-    # N. Virginia
-    us-east-1:
-      HVM64: ami-1b9c4966
-    # Ohio
-    us-east-2:
-      HVM64: ami-c9e8f725
-    # N. California
-    us-west-1:
-      HVM64: ami-7b2e391b
-    # Oregon
-    us-west-2:
-      HVM64: ami-ffd74b87
-    # Canada
-    ca-central-1:
-      HVM64: ami-d4d650b0
-    # Frankfurt
-    eu-central-1:
-      HVM64: ami-1c3767f7
-    # Ireland
-    eu-west-1:
-      HVM64: ami-ebdc8992
-    # London
-    eu-west-2:
-      HVM64: ami-cfc92fa8
-    # Paris
-    eu-west-3:
-      HVM64: ami-b63583cb
-    # Singapore
-    ap-southeast-1:
-      HVM64: ami-10277a6c
-    # Sydney
-    ap-southeast-2:
-      HVM64: ami-96666ff5
-    # Seoul
-    ap-northeast-2:
-      HVM64: ami-f52b879b
-    # Tokyo
-    ap-northeast-1:
-      HVM64: ami-bf5203d9
-    # Mumbai
+    # Software Version:
+    # OpenVPN Access Server 2.6.1-fe8020db-5343-4c43-9e65-5ed4a825c931-ami-0f5d312e085235ed4.4
     ap-south-1:
-      HVM64: ami-c4f8a0ab
-    # Sao Paulo
+      HVM64: ami-0be23bab5e416bce2
+    eu-west-3:
+      HVM64: ami-088080980c023d570
+    eu-west-2:
+      HVM64: ami-0bb84df8b7f1eea55
+    eu-west-1:
+      HVM64: ami-05122e65346f7f721
+    ap-northeast-2:
+      HVM64: ami-00ca207ae32c3c9a2
+    ap-northeast-1:
+      HVM64: ami-0481fb75c293f82a8
     sa-east-1:
-      HVM64: ami-e036628c
+      HVM64: ami-08bf1c756f487f26a
+    ca-central-1:
+      HVM64: ami-043fe8b5b3cb5b48b
+    ap-southeast-1:
+      HVM64: ami-03e2781e8f0ee0d66
+    ap-southeast-2:
+      HVM64: ami-05fdd828e5a7530b0
+    eu-central-1:
+      HVM64: ami-01c85eb1cfa9321e3
+    us-east-1:
+      HVM64: ami-07a8d85046c8ecc99
+    us-east-2:
+      HVM64: ami-04f63e8f7a845159a
+    us-west-1:
+      HVM64: ami-0a5aef046a3a6e7bf
+    us-west-2:
+      HVM64: ami-0abbb3ceae54aa9fa
 
 Resources:
   VPC:
