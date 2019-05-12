@@ -311,6 +311,7 @@ Resources:
             - install_cfn
             - config_repos
             - config_ip_forwarding
+            - config_kernel_source
             - install_wireguard
             - install_unbound
         install_cfn:
@@ -359,6 +360,12 @@ Resources:
               test: '! grep "net.ipv4.ip_forward" /etc/sysctl.conf'
             update_system:
               command: 'sysctl -p'
+        config_kernel_source:
+          commands:
+            install_running_kernel_source:
+              command: 'yum install -y kernel-devel-$(uname -r)'
+        # ToDo: Configure regular security updates
+        # https://stackoverflow.com/a/46248515/1943898
         install_wireguard:
           packages:
             yum:
@@ -756,6 +763,8 @@ Resources:
        - Key: Name
          Value: WireGuard VPN Instance
       UserData:
+        # ToDo: migrate script to cloud-init
+        # https://cloudinit.readthedocs.io/en/latest/topics/examples.html
         Fn::Base64: !Sub |+
             #!/bin/bash -xe
             yum update -y aws-cfn-bootstrap
