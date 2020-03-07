@@ -753,7 +753,7 @@ Resources:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       NetworkInterfaces:
-        - AssociatePublicIpAddress: "true"
+        - AssociatePublicIpAddress: true
           DeviceIndex: "0"
           GroupSet:
             - !Ref SecurityGroup
