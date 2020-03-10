@@ -2,6 +2,13 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: OpenVPN server (Own VPC)
 
+# ToDo:
+# - Using LetsEncrypt
+#   - https://www.mkwserver.info/index.php?/topic/9-using-let%C3%A2%E2%82%AC%E2%84%A2s-encrypt-and-certbot-to-automate-the-creation-of-certificates-for-openvpn/&tab=comments#comment-9
+#   - https://github.com/hashicorp/best-practices/blob/master/terraform/modules/aws/network/openvpn/openvpn.tf
+# - Handle different tiers of users + how to set up OpenVPN with commands in userdata
+#   - https://github.com/Accenture/adop-aws/blob/master/layer4-openvpn/service-openvpn-access-server.yaml
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -38,10 +45,10 @@ Parameters:
       - t3.large
       - t3.xlarge
       - t3.2xlarge
-    Default: t2.medium
+    Default: t3.micro
 
   KeyName:
-    Description: 'SSH Key Name'
+    Description: "SSH Key Name"
     Type: AWS::EC2::KeyPair::KeyName
 
   HostedZoneName:
@@ -55,7 +62,7 @@ Parameters:
     Type: String
     MinLength: 4
     MaxLength: 32
-    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
     ConstraintDescription: Must begin with a letter, be at least 4 chars long and only alphanumeric
     Default: openvpn
 
@@ -83,43 +90,51 @@ Parameters:
       - 1
     Default: 1
 
+  SplitTunnel:
+    Description: |
+      True if the OpenVPN is a split tunnel, else false. A VPN is considered to be a split tunnel if it only routes private traffic over the tunnel and not the traffic destined for the default gateway.
+    Default: false
+    Type: String
+    AllowedValues:
+      - true
+      - false
+
 Conditions:
-  HasHostedZone: !Not [ !Equals [ !Ref HostedZoneName, "" ]]
+  HasHostedZone: !Not [!Equals [!Ref HostedZoneName, ""]]
 
 Mappings:
   AWSRegionArch2AMI:
-    # Software Version:
-    # OpenVPN Access Server 2.6.1-fe8020db-5343-4c43-9e65-5ed4a825c931-ami-0f5d312e085235ed4.4
+    # Software Version: OpenVPN Access Server 2.7.5-fe8020db-5343-4c43-9e65-5ed4a825c931-ami-0c56f53c16ad84dcd.4
     ap-south-1:
-      HVM64: ami-0be23bab5e416bce2
+      HVM64: ami-00b7bb451c0c20931
     eu-west-3:
-      HVM64: ami-088080980c023d570
+      HVM64: ami-046a4e41b1e9b05de
     eu-west-2:
-      HVM64: ami-0bb84df8b7f1eea55
+      HVM64: ami-0d8328d4870bdb740
     eu-west-1:
-      HVM64: ami-05122e65346f7f721
+      HVM64: ami-0cb4952aadb21a730
     ap-northeast-2:
-      HVM64: ami-00ca207ae32c3c9a2
+      HVM64: ami-0ee35e6d85611600d
     ap-northeast-1:
-      HVM64: ami-0481fb75c293f82a8
+      HVM64: ami-0fb7d2efacd90133b
     sa-east-1:
-      HVM64: ami-08bf1c756f487f26a
+      HVM64: ami-01ed0cb648aab86b9
     ca-central-1:
-      HVM64: ami-043fe8b5b3cb5b48b
+      HVM64: ami-027ea0cc4e34dbf65
     ap-southeast-1:
-      HVM64: ami-03e2781e8f0ee0d66
+      HVM64: ami-086b2468bd6cf03ae
     ap-southeast-2:
-      HVM64: ami-05fdd828e5a7530b0
+      HVM64: ami-0d8ba0e9e6b6d18b7
     eu-central-1:
-      HVM64: ami-01c85eb1cfa9321e3
+      HVM64: ami-01a95ada398994de8
     us-east-1:
-      HVM64: ami-07a8d85046c8ecc99
+      HVM64: ami-0ca1c6f31c3fb1708
     us-east-2:
-      HVM64: ami-04f63e8f7a845159a
+      HVM64: ami-06b7ca1fe6197b6ff
     us-west-1:
-      HVM64: ami-0a5aef046a3a6e7bf
+      HVM64: ami-0f2426a96b5ca8a0c
     us-west-2:
-      HVM64: ami-0abbb3ceae54aa9fa
+      HVM64: ami-034692da3c6768a18
 
 Resources:
   VPC:
@@ -127,8 +142,8 @@ Resources:
     Properties:
       CidrBlock: "10.0.0.0/16"
       Tags:
-      - Key: Name
-        Value: OpenVPN
+        - Key: Name
+          Value: OpenVPN
 
   PublicSubnet:
     Type: AWS::EC2::Subnet
@@ -136,8 +151,8 @@ Resources:
       VpcId: !Ref VPC
       CidrBlock: "10.0.0.0/24"
       Tags:
-      - Key: Name
-        Value: OpenVPN Public Subnet
+        - Key: Name
+          Value: OpenVPN Public Subnet
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -171,6 +186,7 @@ Resources:
     Type: AWS::EC2::EIP
     Properties:
       Domain: "vpc"
+      InstanceId: !Ref OpenVPNInstance
 
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -178,66 +194,142 @@ Resources:
       VpcId: !Ref VPC
       GroupDescription: Security group for OpenVPN Server
       SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 443
-        ToPort: 443
-        CidrIp: "0.0.0.0/0"
-      - IpProtocol: tcp
-        FromPort: 943
-        ToPort: 943
-        CidrIp: "0.0.0.0/0"
-      - IpProtocol: udp
-        FromPort: 1194
-        ToPort: 1194
-        CidrIp: "0.0.0.0/0"
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: tcp
+          FromPort: 943
+          ToPort: 943
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: udp
+          FromPort: 1194
+          ToPort: 1194
+          CidrIp: "0.0.0.0/0"
 
   OpenVPNInstance:
     Type: AWS::EC2::Instance
-    DependsOn: IPAddress
+    Metadata:
+      Comment: Configure OpenVPN
+      AWS::CloudFormation::Init:
+        configSets:
+          default:
+            - install_cfn
+            # - config_ip_forwarding
+        install_cfn:
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+                interval=1
+              mode: "000400"
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub |+
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.OpenVPNInstance.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v \
+                    --stack ${AWS::StackName} \
+                    --resource OpenVPNInstance \
+                    --region ${AWS::Region}
+                runas=root
+            /lib/systemd/system/cfn-hup.service:
+              content: |
+                [Unit]
+                Description=cfn-hup daemon
+                [Service]
+                Type=simple
+                ExecStart=/usr/local/bin/cfn-hup
+                Restart=always
+                [Install]
+                WantedBy=multi-user.target
+          commands:
+            start_enable_cfn-hup:
+              command: "systemctl enable cfn-hup && systemctl start cfn-hup"
+        # config_ip_forwarding:
+        #   commands:
+        #     edit_config_file:
+        #       command: 'echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf'
+        #       test: '! grep "net.ipv4.ip_forward" /etc/sysctl.conf'
+        #     update_system:
+        #       command: "sysctl -p"
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1
+        Timeout: "PT15M"
     Properties:
       ImageId:
         Fn::FindInMap:
-        - AWSRegionArch2AMI
-        - Ref: AWS::Region
-        - HVM64
+          - AWSRegionArch2AMI
+          - Ref: AWS::Region
+          - HVM64
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
-      SecurityGroupIds:
-      - !Ref SecurityGroup
-      SubnetId: !Ref PublicSubnet
+      NetworkInterfaces:
+        - DeviceIndex: "0"
+          AssociatePublicIpAddress: true
+          GroupSet:
+            - !Ref SecurityGroup
+          SubnetId: !Ref PublicSubnet
       Tags:
-       - Key: Name
-         Value: OpenVPN Instance
+        - Key: Name
+          Value: OpenVPN Instance
       UserData:
-        Fn::Base64: !Sub |
-          public_hostname=${IPAddress}
-          admin_user=${AdminUser}
-          admin_pw=${AdminPassword}
-          reroute_gw=${RouteAllTraffic}
-          reroute_dns=${UseVPNDNS}
+        Fn::Base64:
+          Fn::Sub:
+            - |+
+              #!/bin/bash -xe
 
-  IPAssociaton:
-    Type: AWS::EC2::EIPAssociation
-    Properties:
-      AllocationId: !GetAtt IPAddress.AllocationId
-      InstanceId: !Ref OpenVPNInstance
+              # public_hostname=${PublicHostname}
+              # admin_user=${AdminUser}
+              # admin_pw=${AdminPassword}
+              # reroute_gw=${RouteAllTraffic}
+              # reroute_dns=${UseVPNDNS}
+
+              apt update -y
+              apt install -y python-pip
+              pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+
+              /usr/local/bin/cfn-init -v \
+              --configsets default \
+              --stack ${AWS::StackName} \
+              --resource OpenVPNInstance \
+              --region ${AWS::Region}
+
+              is_hup_active=$(systemctl is-active cfn-hup)
+
+              [[ ${!is_hup_active} == "active" ]]
+
+              /usr/local/bin/cfn-signal -e $? \
+              --stack ${AWS::StackName} \
+              --resource OpenVPNInstance \
+              --region ${AWS::Region}
+            - PublicHostname: !Sub "openvpn.${AWS::Region}.${HostedZoneName}"
 
   DNSRecord:
     Type: AWS::Route53::RecordSet
     Condition: HasHostedZone
     Properties:
-      HostedZoneName: !Ref 'HostedZoneName'
+      HostedZoneName: !Ref "HostedZoneName"
       Comment: Friendly DNS name for OpenVPN server
-      Name: !Join ['', ['openvpn', ., !Ref 'AWS::Region', ., !Ref 'HostedZoneName']]
+      Name: !Sub "openvpn.${AWS::Region}.${HostedZoneName}"
       Type: A
-      TTL: '900'
+      TTL: "300"
       ResourceRecords:
-      - !Ref IPAddress
+        - !Ref IPAddress
 
 Outputs:
   OpenVPNServerAdminURL:
     Description: OpenVPN Administration URL
-    Value: !Sub https://${IPAddress}:943/admin
+    Value: !Sub https://${DNSRecord}:943/admin
   OpenVPNServerURL:
-    Description: OpenVPN Server URL
-    Value: !Sub https://${IPAddress}
+    Description: OpenVPN User Login URL
+    Value: !Sub https://${DNSRecord}/
