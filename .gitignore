@@ -1,0 +1,8 @@
+*_private_key
+*_public_key
+*_preshared_key
+*.key
+*.params.json
+*.swp
+*.bak
+wireguard-*.conf
