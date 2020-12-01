@@ -50,6 +50,7 @@ Parameters:
       - t2.large
       - t2.xlarge
       - t2.2xlarge
+      - t3a.nano
       - t3.nano
       - t3.micro
       - t3.small
@@ -88,7 +89,7 @@ Parameters:
     Default: t3.medium
 
   KeyName:
-    Description: 'SSH Key Name'
+    Description: "SSH Key Name"
     Type: AWS::EC2::KeyPair::KeyName
 
   HostedZoneName:
@@ -98,8 +99,8 @@ Parameters:
     MaxLength: 255
 
   LatestAmiId:
-    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 
   CIDRBlock:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
@@ -168,7 +169,7 @@ Parameters:
   Peer2PublicKey:
     Description: Public Key for peer 2
     Type: String
-    Default: ''
+    Default: ""
 
   Peer2IP:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
@@ -185,7 +186,7 @@ Parameters:
   Peer3PublicKey:
     Description: Public Key for peer 3
     Type: String
-    Default: ''
+    Default: ""
 
   Peer3IP:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
@@ -202,7 +203,7 @@ Parameters:
   Peer4PublicKey:
     Description: Public Key for peer 4
     Type: String
-    Default: ''
+    Default: ""
 
   Peer4IP:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
@@ -219,7 +220,7 @@ Parameters:
   Peer5PublicKey:
     Description: Public Key for peer 1
     Type: String
-    Default: ''
+    Default: ""
 
   Peer5IP:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
@@ -229,11 +230,11 @@ Parameters:
     Type: String
 
 Conditions:
-  HasHostedZone: !Not [ !Equals [ !Ref HostedZoneName, '' ]]
-  Peer2Exists: !Not [ !Equals [!Ref Peer2PublicKey, '']]
-  Peer3Exists: !Not [ !Equals [!Ref Peer3PublicKey, '']]
-  Peer4Exists: !Not [ !Equals [!Ref Peer4PublicKey, '']]
-  Peer5Exists: !Not [ !Equals [!Ref Peer5PublicKey, '']]
+  HasHostedZone: !Not [!Equals [!Ref HostedZoneName, ""]]
+  Peer2Exists: !Not [!Equals [!Ref Peer2PublicKey, ""]]
+  Peer3Exists: !Not [!Equals [!Ref Peer3PublicKey, ""]]
+  Peer4Exists: !Not [!Equals [!Ref Peer4PublicKey, ""]]
+  Peer5Exists: !Not [!Equals [!Ref Peer5PublicKey, ""]]
 
 Resources:
   VPC:
@@ -241,8 +242,8 @@ Resources:
     Properties:
       CidrBlock: !Ref CIDRBlock
       Tags:
-      - Key: Name
-        Value: WireGuard VPC
+        - Key: Name
+          Value: WireGuard VPC
 
   PublicSubnet:
     Type: AWS::EC2::Subnet
@@ -250,8 +251,8 @@ Resources:
       VpcId: !Ref VPC
       CidrBlock: !Ref PublicSubnetCIDR
       Tags:
-      - Key: Name
-        Value: WireGuard Public Subnet
+        - Key: Name
+          Value: WireGuard Public Subnet
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -292,14 +293,14 @@ Resources:
       VpcId: !Ref VPC
       GroupDescription: Security group for WireGuard Server
       SecurityGroupIngress:
-      - IpProtocol: udp
-        FromPort: !Ref ServerPort
-        ToPort: !Ref ServerPort
-        CidrIp: "0.0.0.0/0"
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: "0.0.0.0/0"
+        - IpProtocol: udp
+          FromPort: !Ref ServerPort
+          ToPort: !Ref ServerPort
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
 
   VPNInstance:
     Type: AWS::EC2::Instance
@@ -322,7 +323,7 @@ Resources:
                 stack=${AWS::StackId}
                 region=${AWS::Region}
                 interval=1
-              mode: '000400'
+              mode: "000400"
               owner: root
               group: root
             /etc/cfn/hooks.d/cfn-auto-reloader.conf:
@@ -338,32 +339,32 @@ Resources:
           services:
             sysvinit:
               cfn-hup:
-                enabled: 'true'
-                ensureRunning: 'true'
+                enabled: "true"
+                ensureRunning: "true"
                 files:
                   - /etc/cfn/cfn-hup.conf
                   - /etc/cfn/hooks.d/cfn-auto-reloader.conf
         config_repos:
-            files:
-              /etc/yum.repos.d/wireguard.repo:
-                source: https://copr.fedorainfracloud.org/coprs/jdoss/wireguard/repo/epel-7/jdoss-wireguard-epel-7.repo
-                owner: root
-                group: root
-            commands:
-                enable_epel:
-                  command: "amazon-linux-extras install epel"
-                  test: 'amazon-linux-extras list | grep epel | (! grep enabled)'
+          files:
+            /etc/yum.repos.d/wireguard.repo:
+              source: https://copr.fedorainfracloud.org/coprs/jdoss/wireguard/repo/epel-7/jdoss-wireguard-epel-7.repo
+              owner: root
+              group: root
+          commands:
+            enable_epel:
+              command: "amazon-linux-extras install epel"
+              test: "amazon-linux-extras list | grep epel | (! grep enabled)"
         config_ip_forwarding:
           commands:
             edit_config_file:
               command: 'echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf'
               test: '! grep "net.ipv4.ip_forward" /etc/sysctl.conf'
             update_system:
-              command: 'sysctl -p'
+              command: "sysctl -p"
         config_kernel_source:
           commands:
             install_running_kernel_source:
-              command: 'yum install -y kernel-devel-$(uname -r)'
+              command: "yum install -y kernel-devel-$(uname -r)"
         # ToDo: Configure regular security updates
         # https://stackoverflow.com/a/46248515/1943898
         install_wireguard:
@@ -393,54 +394,50 @@ Resources:
                         PresharedKey = ${PreSharedKey}
                         AllowedIPs = ${Peer1IP}
                     - Fn::If:
-                      - Peer2Exists
-                      -
-                        Fn::Sub: |
-                          [Peer]
-                          PublicKey = ${Peer2PublicKey}
-                          PresharedKey = ${PreSharedKey}
-                          AllowedIPs = ${Peer2IP}
-                      - ""
+                        - Peer2Exists
+                        - Fn::Sub: |
+                            [Peer]
+                            PublicKey = ${Peer2PublicKey}
+                            PresharedKey = ${PreSharedKey}
+                            AllowedIPs = ${Peer2IP}
+                        - ""
                     - Fn::If:
-                      - Peer3Exists
-                      -
-                        Fn::Sub: |
-                          [Peer]
-                          PublicKey = ${Peer3PublicKey}
-                          PresharedKey = ${PreSharedKey}
-                          AllowedIPs = ${Peer3IP}
-                      - ""
+                        - Peer3Exists
+                        - Fn::Sub: |
+                            [Peer]
+                            PublicKey = ${Peer3PublicKey}
+                            PresharedKey = ${PreSharedKey}
+                            AllowedIPs = ${Peer3IP}
+                        - ""
                     - Fn::If:
-                      - Peer4Exists
-                      -
-                        Fn::Sub: |
-                          [Peer]
-                          PublicKey = ${Peer4PublicKey}
-                          PresharedKey = ${PreSharedKey}
-                          AllowedIPs = ${Peer4IP}
-                      - ""
+                        - Peer4Exists
+                        - Fn::Sub: |
+                            [Peer]
+                            PublicKey = ${Peer4PublicKey}
+                            PresharedKey = ${PreSharedKey}
+                            AllowedIPs = ${Peer4IP}
+                        - ""
                     - Fn::If:
-                      - Peer5Exists
-                      -
-                        Fn::Sub: |
-                          [Peer]
-                          PublicKey = ${Peer5PublicKey}
-                          PresharedKey = ${PreSharedKey}
-                          AllowedIPs = ${Peer5IP}
-                      - ""
-              mode: '000400'
+                        - Peer5Exists
+                        - Fn::Sub: |
+                            [Peer]
+                            PublicKey = ${Peer5PublicKey}
+                            PresharedKey = ${PreSharedKey}
+                            AllowedIPs = ${Peer5IP}
+                        - ""
+              mode: "000400"
               owner: root
               group: root
           commands:
             enable_wireguard:
-              command: 'systemctl enable wg-quick@wg0'
+              command: "systemctl enable wg-quick@wg0"
             start_wireguard:
-              command: 'systemctl start wg-quick@wg0'
+              command: "systemctl start wg-quick@wg0"
           services:
             sysvinit:
               wg-quick@wg0:
                 files:
-                  - '/etc/wireguard/wg0.conf'
+                  - "/etc/wireguard/wg0.conf"
                 packages:
                   yum:
                     - wireguard-dkms
@@ -452,7 +449,7 @@ Resources:
           files:
             /var/lib/unbound/root.hints:
               source: "https://www.internic.net/domain/named.cache"
-              mode: '000444'
+              mode: "000444"
               owner: unbound
               group: unbound
             /etc/unbound/unbound.conf:
@@ -728,19 +725,19 @@ Resources:
 
                     # Stub and Forward zones
                     include: /etc/unbound/conf.d/*.conf
-              mode: '000644'
+              mode: "000644"
               owner: root
               group: root
           commands:
             enable_unbound:
-              command: 'systemctl enable unbound'
+              command: "systemctl enable unbound"
             start_unbound:
-              command: 'systemctl start unbound'
+              command: "systemctl start unbound"
           services:
             sysvinit:
               unbound:
                 files:
-                  - '/etc/unbound/unbound.conf'
+                  - "/etc/unbound/unbound.conf"
                 packages:
                   yum:
                     - unbound
@@ -757,25 +754,24 @@ Resources:
           DeviceIndex: "0"
           GroupSet:
             - !Ref SecurityGroup
-          SubnetId:
-            !Ref PublicSubnet
+          SubnetId: !Ref PublicSubnet
       Tags:
-       - Key: Name
-         Value: WireGuard VPN Instance
+        - Key: Name
+          Value: WireGuard VPN Instance
       UserData:
         # ToDo: migrate script to cloud-init
         # https://cloudinit.readthedocs.io/en/latest/topics/examples.html
         Fn::Base64: !Sub |+
-            #!/bin/bash -xe
-            yum update -y aws-cfn-bootstrap
-            /opt/aws/bin/cfn-init -v \
-              --stack ${AWS::StackName} \
-              --resource VPNInstance \
-              --region ${AWS::Region}
-            /opt/aws/bin/cfn-signal -e $? \
-              --stack ${AWS::StackName} \
-              --resource VPNInstance \
-              --region ${AWS::Region}
+          #!/bin/bash -xe
+          yum update -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v \
+            --stack ${AWS::StackName} \
+            --resource VPNInstance \
+            --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? \
+            --stack ${AWS::StackName} \
+            --resource VPNInstance \
+            --region ${AWS::Region}
 
   IPAssociaton:
     Type: AWS::EC2::EIPAssociation
@@ -787,13 +783,17 @@ Resources:
     Type: AWS::Route53::RecordSet
     Condition: HasHostedZone
     Properties:
-      HostedZoneName: !Ref 'HostedZoneName'
+      HostedZoneName: !Ref "HostedZoneName"
       Comment: Friendly DNS name for WireGuard server
-      Name: !Join ['', ['wireguard', ., !Ref 'AWS::Region', ., !Ref 'HostedZoneName']]
+      Name:
+        !Join [
+          "",
+          ["wireguard", ., !Ref "AWS::Region", ., !Ref "HostedZoneName"],
+        ]
       Type: A
-      TTL: '900'
+      TTL: 900
       ResourceRecords:
-      - !Ref IPAddress
+        - !Ref IPAddress
 
 Outputs:
   VPNServerDNSName:
