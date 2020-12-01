@@ -322,7 +322,7 @@ Resources:
       Comment: Friendly DNS name for OpenVPN server
       Name: !Sub "openvpn.${AWS::Region}.${HostedZoneName}"
       Type: A
-      TTL: "300"
+      TTL: 300
       ResourceRecords:
         - !Ref IPAddress
 
