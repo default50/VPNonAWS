@@ -58,7 +58,10 @@ Parameters:
   LatestAmiId:
     Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
     Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
-
+    # AllowedValues:
+    #   - "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+    #   - "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2"
+  
   CIDRBlock:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: 10.0.0.0/16
@@ -264,6 +267,7 @@ Resources:
     Metadata:
       Comment: Install a simple application
       AWS::CloudFormation::Init:
+      # ToDo: Create swapfile
         configSets:
           default:
             - install_cfn
