@@ -42,51 +42,8 @@ Parameters:
   InstanceType:
     Description: EC2 Instance Type
     Type: String
-    AllowedValues:
-      - t2.nano
-      - t2.micro
-      - t2.small
-      - t2.medium
-      - t2.large
-      - t2.xlarge
-      - t2.2xlarge
-      - t3a.nano
-      - t3.nano
-      - t3.micro
-      - t3.small
-      - t3.medium
-      - t3.large
-      - t3.xlarge
-      - t3.2xlarge
-      - c3.large
-      - c3.xlarge
-      - c3.2xlarge
-      - c3.4xlarge
-      - c3.8xlarge
-      - c4.large
-      - c4.xlarge
-      - c4.2xlarge
-      - c4.4xlarge
-      - c4.8xlarge
-      - c5.large
-      - c5.xlarge
-      - c5.2xlarge
-      - c5.4xlarge
-      - c5.9xlarge
-      - c5.18xlarge
-      - c5d.large
-      - c5d.xlarge
-      - c5d.2xlarge
-      - c5d.4xlarge
-      - c5d.9xlarge
-      - c5d.18xlarge
-      - c5n.large
-      - c5n.xlarge
-      - c5n.2xlarge
-      - c5n.4xlarge
-      - c5n.9xlarge
-      - c5n.18xlarge
-    Default: t3.medium
+    Default: t3a.nano
+    # ToDo: Add support for ARM (Graviton) instances 
 
   KeyName:
     Description: "SSH Key Name"
