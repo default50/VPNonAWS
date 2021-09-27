@@ -37,6 +37,11 @@ Metadata:
           - Peer5Name
           - Peer5PublicKey
           - Peer5IP
+  cfn-lint:
+    config:
+      ignore_checks:
+        # https://github.com/aws-cloudformation/cfn-lint/blob/main/src/cfnlint/rules/resources/NoEcho.py
+        - W4002
 
 Parameters:
   InstanceType:
