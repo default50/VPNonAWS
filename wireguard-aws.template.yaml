@@ -267,16 +267,16 @@ Resources:
     Metadata:
       Comment: Install a simple application
       AWS::CloudFormation::Init:
-      # ToDo: Create swapfile
         configSets:
           default:
-            - install_cfn
+            - install_cfn_hup
+            - create_swap
             - config_repos
             - config_ip_forwarding
             - config_kernel_source
             - install_wireguard
             - install_unbound
-        install_cfn:
+        install_cfn_hup:
           files:
             /etc/cfn/cfn-hup.conf:
               content: !Sub |
@@ -305,6 +305,19 @@ Resources:
                 files:
                   - /etc/cfn/cfn-hup.conf
                   - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+        create_swap:
+          commands:
+            0_enable_swap:
+              command: |
+                /usr/bin/fallocate -l 1G /var/spool/swap
+                chmod 0600 /var/spool/swap
+                mkswap /var/spool/swap
+                swapon /var/spool/swap
+              test: '! test -e /var/spool/swap'
+            1_persist_on_reboot:
+              command: |
+                echo "/var/spool/swap swap swap defaults 0 0" >> /etc/fstab
+              test: '! grep "swap" /etc/fstab'
         config_repos:
           files:
             /etc/yum.repos.d/wireguard.repo:
