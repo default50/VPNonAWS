@@ -47,6 +47,12 @@ Metadata:
         - W4002
 
 Parameters:
+  Namespace:
+    AllowedPattern: '^[a-zA-Z0-9\-\:]+$'
+    Default: "sebacruz-vpn"
+    Description: Namespace to be used for exports
+    Type: String
+
   InstanceType:
     Description: EC2 Instance Type
     Type: String
@@ -283,6 +289,22 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: "0.0.0.0/0"
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        MetadataOptions:
+          HttpEndpoint: enabled
+          HttpPutResponseHopLimit: 1
+          HttpTokens: required
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: Namespace
+              Value: !Ref Namespace
+            - Key: Name
+              Value: !Sub "${Namespace}:LaunchTemplate"
 
   VPNInstance:
     Type: AWS::EC2::Instance
@@ -765,6 +787,9 @@ Resources:
       ImageId: !Ref LatestAmiId
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
@@ -772,8 +797,10 @@ Resources:
             - !Ref SecurityGroup
           SubnetId: !Ref PublicSubnet
       Tags:
+        - Key: Namespace
+          Value: !Ref Namespace
         - Key: Name
-          Value: WireGuard VPN Instance
+          Value: !Sub "${Namespace}:WireGuard"
       UserData:
         # ToDo: migrate script to cloud-init
         # https://cloudinit.readthedocs.io/en/latest/topics/examples.html
@@ -805,11 +832,7 @@ Resources:
     Properties:
       HostedZoneName: !Ref "HostedZoneName"
       Comment: Friendly DNS name for WireGuard server
-      Name:
-        !Join [
-          "",
-          ["wireguard", ., !Ref "AWS::Region", ., !Ref "HostedZoneName"],
-        ]
+      Name: !Sub "wireguard.${AWS::Region}.${HostedZoneName}"
       Type: A
       TTL: 900
       ResourceRecords:
