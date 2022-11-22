@@ -322,17 +322,6 @@ Resources:
             - install_wireguard
         install_cfn_hup:
           files:
-            /etc/systemd/system/cfn-hup.service:
-              content: |
-                [Unit]
-                Description=cfn-hup daemon
-
-                [Service]
-                ExecStart=/usr/local/bin/cfn-hup -v
-                PIDFile=/var/run/cfn-hup.pid
-
-                [Install]
-                WantedBy=multi-user.target
             /etc/cfn/cfn-hup.conf:
               content: !Sub |
                 [main]
@@ -347,7 +336,7 @@ Resources:
                 [cfn-auto-reloader-hook]
                 triggers=post.update
                 path=Resources.VPNInstance.Metadata.AWS::CloudFormation::Init
-                action=/usr/local/bin/cfn-init -v \
+                action=/opt/aws/bin/cfn-init -v \
                     --stack ${AWS::StackName} \
                     --resource VPNInstance \
                     --region ${AWS::Region}
@@ -358,7 +347,6 @@ Resources:
                 enabled: "true"
                 ensureRunning: "true"
                 files:
-                  - /etc/systemd/system/cfn-hup.service
                   - /etc/cfn/cfn-hup.conf
                   - /etc/cfn/hooks.d/cfn-auto-reloader.conf
         create_swap:
@@ -807,10 +795,7 @@ Resources:
         Fn::Base64: !Sub |+
           #!/bin/bash -xe
           PATH=/opt/aws/bin:/usr/local/bin:$PATH
-          if ( ! which cfn-init ); then
-            yum install -y python3-pip chkconfig
-            pip3 install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
-          fi
+          yum install -y aws-cfn-bootstrap  # available since al2022-ami-2022.0.20220728
           cfn-init -v \
             --stack ${AWS::StackName} \
             --resource VPNInstance \
