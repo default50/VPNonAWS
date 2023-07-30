@@ -8,7 +8,7 @@ set -Eeuo pipefail
 NAMESPACE="sebacruz-vpn"
 TEMPLATE="wireguard-aws.template.yaml"
 STACK_BASENAME="WireGuardVPN"
-declare -A REGIONS=([LHR]="eu-west-2" [CMH]="us-east-2")
+declare -A REGIONS=([LHR]="eu-west-2" [CMH]="us-east-2" [GRU]="sa-east-1")
 
 function deploy {
     local stack_name="${STACK_BASENAME}-${2}"
