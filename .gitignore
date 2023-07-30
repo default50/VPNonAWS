@@ -8,3 +8,5 @@
 .vscode
 *.code-workspace
 wireguard-*.conf
+confs/
+keys/
