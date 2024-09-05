@@ -23,8 +23,10 @@ function deploy {
     # If 4th argument to this function is not empty, then append new argument for command
     [[ -n "${4:-}" ]] && command="${command} --parameter-overrides ${4}"
 
-    # Deployment "fails" when there's no updates to make. Ignore that so that we can continue with other templates.
-    deploy_result=$(eval "${command} 2>&1")
+    # deploy_result=$(eval "${command} 2>&1")
+    deploy_result=$(eval "${command}")
+    # Deployment "fails" (doesn't deploy anything) when there's no updates to make.
+    # Ignore that so that we can continue with other templates.
     if [[ "${deploy_result}" == *"No changes to deploy."* ]]; then
         echo "${deploy_result}" | tail -1
     else
