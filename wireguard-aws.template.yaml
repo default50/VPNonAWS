@@ -43,8 +43,8 @@ Metadata:
   cfn-lint:
     config:
       ignore_checks:
-        # https://github.com/aws-cloudformation/cfn-lint/blob/main/src/cfnlint/rules/resources/NoEcho.py
-        - W4002
+        # https://github.com/aws-cloudformation/cfn-lint/blob/main/src/cfnlint/rules/parameters/NoEcho.py
+        - W2010
 
 Parameters:
   Namespace:
@@ -375,6 +375,7 @@ Resources:
               gcc: []
               iptables-nft: []
               make: []
+              nftables: []
           sources:
             /usr/local/src/wireguard-tools: "https://github.com/WireGuard/wireguard-tools/zipball/master"
           files:
@@ -825,6 +826,7 @@ Resources:
 
 Outputs:
   VPNServerDNSName:
+    Condition: HasHostedZone
     Description: WireGuard VPN Server DNS Name
     Value: !Sub ${DNSRecord}
   ServerIPandMask:
