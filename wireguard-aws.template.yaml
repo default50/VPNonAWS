@@ -315,11 +315,22 @@ Resources:
         # https://stackoverflow.com/a/46248515/1943898
         configSets:
           default:
+            - wait_for_system
             - install_cfn_hup
             - create_swap
             - config_networking
             - install_unbound
             - install_wireguard
+        wait_for_system:
+          commands:
+            01_wait_for_yum:
+              command: |
+                while fuser /var/lib/rpm/.rpm.lock >/dev/null 2>&1; do
+                  echo "Waiting for yum lock to be released..."
+                  sleep 5
+                done
+            02_update_system:
+              command: "yum update -y"
         install_cfn_hup:
           files:
             /etc/cfn/cfn-hup.conf:
