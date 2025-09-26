@@ -56,7 +56,7 @@ Parameters:
   InstanceType:
     Description: EC2 Instance Type
     Type: String
-    Default: c6g.medium
+    Default: c8g.medium
 
   KeyName:
     Description: "SSH Key Name"
