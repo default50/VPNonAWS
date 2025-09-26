@@ -309,7 +309,7 @@ Resources:
   VPNInstance:
     Type: AWS::EC2::Instance
     Metadata:
-      Comment: Install a simple application
+      Comment: Install a WireGuard VPN instance
       AWS::CloudFormation::Init:
         # ToDo: Configure regular security updates
         # https://stackoverflow.com/a/46248515/1943898
@@ -317,7 +317,7 @@ Resources:
           default:
             - install_cfn_hup
             - create_swap
-            - config_ip_forwarding
+            - config_networking
             - install_unbound
             - install_wireguard
         install_cfn_hup:
@@ -362,20 +362,61 @@ Resources:
               command: |
                 echo "/var/spool/swap swap swap defaults 0 0" >> /etc/fstab
               test: '! grep "swap" /etc/fstab'
-        config_ip_forwarding:
+        config_networking:
+          packages:
+            yum:
+              iptables-nft: []
+              nftables: []
+          files:
+            /etc/nftables/wireguard.nft:
+              content: |
+                #!/usr/sbin/nft -f
+
+                flush ruleset
+
+                define pub_iface = "<MARK>"
+                define wg_iface = "wg0"
+
+                table inet filter {
+                        chain FORWARD {
+                                type filter hook forward priority filter; policy accept;
+                                iifname $wg_iface accept
+                        }
+                }
+                table inet nat {
+                        chain POSTROUTING {
+                                type nat hook postrouting priority srcnat; policy accept;
+                                oifname $pub_iface masquerade
+                        }
+                }
+              mode: "000644"
+              owner: root
+              group: root
           commands:
-            edit_config_file:
+            10_config_packet_forwarding:
               command: 'echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf'
               test: '! grep "net.ipv4.ip_forward" /etc/sysctl.conf'
-            update_system:
+            20_apply_packet_forwarding:
               command: "sysctl -p"
+            30_update_nic:
+              command: sed -i "s/<MARK>/$(ls /sys/class/net/ | grep -E '^(eth|ens)' | head -1)/" /etc/nftables/wireguard.nft
+            40_config_wireguard.nft:
+              command: 'echo "include \"/etc/nftables/wireguard.nft\"" >> /etc/sysconfig/nftables.conf'
+              test: '! grep "include \"/etc/nftables/wireguard.nft\"" /etc/sysconfig/nftables.conf'
+            50_wireguard.nft_updated:
+              command: "grep -v '^#' /etc/nftables/wireguard.nft"
+          services:
+            systemd:
+              nftables:
+                enabled: true
+                ensureRunning: true
+                commands:
+                  - "50_wireguard.nft_updated"
         install_wireguard:
           packages:
             yum:
               gcc: []
-              iptables-nft: []
               make: []
-              nftables: []
           sources:
             /usr/local/src/wireguard-tools: "https://github.com/WireGuard/wireguard-tools/zipball/master"
           files:
@@ -390,10 +431,6 @@ Resources:
                         SaveConfig = false
                         ListenPort = ${ServerPort}
                         PrivateKey = ${PrivateKey}
-
-                        # Note - substitute eth0 in the following lines to match the Internet-facing interface
-                        PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
-                        PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
                         [Peer]
                         PublicKey = ${Peer1PublicKey}
@@ -447,22 +484,11 @@ Resources:
               command: make -C /usr/local/src/wireguard-tools/src -j$(nproc)
             10_install_tools:
               command: make -C /usr/local/src/wireguard-tools/src install
-            15_update_nic:
-              command: sed -i "s/eth0/$(ip route list | grep default | grep -E  'dev (\w+)' -o | awk '{print $2}')/" /etc/wireguard/wg0.conf
-            20_enable_wireguard:
-              command: "systemctl enable wg-quick@wg0"
-            30_start_wireguard:
-              command: "systemctl start wg-quick@wg0"
           services:
-            sysvinit:
+            systemd:
               wg-quick@wg0:
-                sources:
-                  - "/usr/local/src/wireguard-tools"
-                files:
-                  - "/etc/wireguard/wg0.conf"
-                commands:
-                  - "00_build_tools"
-                  - "10_install_tools"
+                enabled: true
+                ensureRunning: true
         install_unbound:
           packages:
             yum:
@@ -754,20 +780,21 @@ Resources:
               command: sed -i s/^#DNS=$/DNS=127.0.0.1/g /etc/systemd/resolved.conf
             20_reconf_systemd_resolver:
               command: sed -i s/^#DNSStubListener=yes$/DNSStubListener=no/g /etc/systemd/resolved.conf
-            30_restart_systemd_resolver:
-              command: "systemctl stop systemd-resolved"
-            40_enable_unbound:
-              command: "systemctl enable unbound"
-            50_start_unbound:
-              command: "systemctl start unbound"
+            30_systemd_resolver_updated:
+              command: "grep -v '^#' /etc/systemd/resolved.conf"
           services:
-            sysvinit:
+            systemd:
               unbound:
+                enabled: true
+                ensureRunning: true
                 files:
+                  - "/var/lib/unbound/root.hints"
                   - "/etc/unbound/unbound.conf"
-                packages:
-                  yum:
-                    - unbound
+              systemd-resolved:
+                enabled: true
+                ensureRunning: true
+                commands:
+                  - "30_systemd_resolver_updated"
     DependsOn: IPAddress
     CreationPolicy:
       ResourceSignal:
