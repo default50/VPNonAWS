@@ -7,8 +7,12 @@ set -Eeuo pipefail
 
 NAMESPACE="sebacruz-vpn"
 TEMPLATE="wireguard-aws.template.yaml"
+TEMPLATE_PARAMS="wireguard.params.json"
 STACK_BASENAME="WireGuardVPN"
 declare -A REGIONS=([LHR]="eu-west-2" [CMH]="us-east-2" [GRU]="sa-east-1")
+
+# Override TEMPLATE_PARAMS if argument provided
+[[ -n "${1:-}" ]] && TEMPLATE_PARAMS="$1"
 
 function deploy {
     local stack_name="${STACK_BASENAME}-${2}"
@@ -65,10 +69,9 @@ for airport in "${!REGIONS[@]}"
 do
     read -r -p "Do you want to process region ${airport}? [y/N] " process
     if [[ "$process" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-        if [[ -f "wireguard.params.json" ]]; then
-            parameters_file="wireguard.params.json"
-            mapfile -t params < <(jq -r '.Parameters[] | [.ParameterKey, .ParameterValue] | "\(.[0]|@sh)=\(.[1]|@sh)"' "${parameters_file}")
-            echo "Processing region ${airport} with parameters ${parameters_file}..."
+        if [[ -f "${TEMPLATE_PARAMS}" ]]; then
+            mapfile -t params < <(jq -r '.Parameters[] | [.ParameterKey, .ParameterValue] | "\(.[0]|@sh)=\(.[1]|@sh)"' "${TEMPLATE_PARAMS}")
+            echo "Processing region ${airport} with parameters ${TEMPLATE_PARAMS}..."
             deploy "${TEMPLATE}" "${airport}" "${REGIONS[$airport]}" "${params[*]}"
         else
             echo "Processing region ${airport} without parameters..."
