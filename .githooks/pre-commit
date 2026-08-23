@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+#
+# pre-commit hook: lint CloudFormation templates with cfn-lint before committing.
+#
+# Lints *all* templates (*.template.yaml at the repo root) on every commit, not just
+# the staged ones. This repo is a small, coherent set of templates, so every commit
+# re-checks the whole set for per-file validity. A failed lint blocks the commit.
+# (Note: cfn-lint validates each template independently — these templates are
+# self-contained standalone stacks with no cross-stack Export/ImportValue links.)
+#
+# Enable this hook (once per clone):
+#   git config core.hooksPath .githooks
+#
+set -Eeuo pipefail
+
+# Resolve to the repo root so the hook works regardless of the current dir.
+repo_root=$(git rev-parse --show-toplevel)
+cd "${repo_root}"
+
+if ! command -v cfn-lint >/dev/null 2>&1; then
+    echo "pre-commit: cfn-lint not found on PATH." >&2
+    echo "  Install it (e.g. 'pip install cfn-lint') or skip with 'git commit --no-verify'." >&2
+    exit 1
+fi
+
+# Collect all tracked/staged root-level templates (index view, so a brand-new
+# template being added in this commit is included).
+templates=()
+while IFS= read -r f; do
+    templates+=("${f}")
+done < <(git ls-files '*.template.yaml')
+
+if [[ ${#templates[@]} -eq 0 ]]; then
+    # No templates in the repo — nothing to lint.
+    exit 0
+fi
+
+echo "pre-commit: linting all ${#templates[@]} template(s) with cfn-lint..."
+if ! cfn-lint "${templates[@]}"; then
+    echo "" >&2
+    echo "pre-commit: cfn-lint reported issues (see above). Commit aborted." >&2
+    echo "  Fix the findings, or bypass with 'git commit --no-verify' if intentional." >&2
+    exit 1
+fi
+
+echo "pre-commit: cfn-lint passed."
+
+# Lint all tracked Markdown with markdownlint-cli2 (config: .markdownlint.jsonc).
+# Soft dependency: warn and skip if the tool isn't installed, rather than blocking
+# commits on a machine that lacks it.
+if command -v markdownlint-cli2 >/dev/null 2>&1; then
+    mdfiles=()
+    while IFS= read -r f; do
+        mdfiles+=("${f}")
+    done < <(git ls-files '*.md')
+
+    if [[ ${#mdfiles[@]} -gt 0 ]]; then
+        echo "pre-commit: linting ${#mdfiles[@]} Markdown file(s) with markdownlint-cli2..."
+        if ! markdownlint-cli2 "${mdfiles[@]}"; then
+            echo "" >&2
+            echo "pre-commit: markdownlint reported issues (see above). Commit aborted." >&2
+            echo "  Fix the findings, or bypass with 'git commit --no-verify' if intentional." >&2
+            exit 1
+        fi
+        echo "pre-commit: markdownlint passed."
+    fi
+else
+    echo "pre-commit: markdownlint-cli2 not found on PATH — skipping Markdown lint." >&2
+    echo "  Install it (e.g. 'brew install markdownlint-cli2') to enable it." >&2
+fi
+
+exit 0

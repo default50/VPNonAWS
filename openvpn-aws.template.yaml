@@ -193,7 +193,6 @@ Resources:
 
   OpenVPNInstance:
     Type: AWS::EC2::Instance
-    DependsOn: IPAddress
     Properties:
       ImageId:
         Fn::FindInMap:
