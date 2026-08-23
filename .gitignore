@@ -7,6 +7,9 @@
 *.bak
 .vscode
 *.code-workspace
+# Kiro workspace (steering, specs, agent config) — internal context kept out of
+# this public repo. Steering lives at .kiro/steering/ only on local clones.
+.kiro/
 wireguard-*.conf
 confs/
 keys/
