@@ -11,6 +11,11 @@ and tooling rather than a shipped software artifact.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-23
+
+First tagged release. Establishes the repo's tooling and documentation baseline around the
+existing WireGuard-on-AWS CloudFormation templates and `deploy.sh`.
+
 ### Added
 
 - `.githooks/pre-commit` — lints all root-level `*.template.yaml` with `cfn-lint` and all tracked
@@ -32,3 +37,6 @@ and tooling rather than a shipped software artifact.
 - Redundant `DependsOn: IPAddress` on `OpenVPNInstance` in `openvpn-aws.template.yaml`
   (`cfn-lint` W3005 — the dependency is already implied by the `${IPAddress}` `Ref` in UserData).
   Cleared the one lint finding so the new pre-commit hook passes.
+
+[Unreleased]: https://github.com/default50/VPNonAWS/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/default50/VPNonAWS/releases/tag/v1.0.0
