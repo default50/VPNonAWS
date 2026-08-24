@@ -11,6 +11,37 @@ and tooling rather than a shipped software artifact.
 
 ## [Unreleased]
 
+### Added
+
+- `InstanceRole` (`AWS::IAM::Role` with the `AmazonSSMManagedInstanceCore` managed policy, plus an
+  inline policy granting `cloudformation:DescribeStackResource`/`SignalResource` — needed once a
+  profile is attached, otherwise `cfn-init` can no longer read its metadata) and `InstanceProfile`,
+  attached to the WireGuard instance so SSM Session Manager works as a first-class, IaC-managed
+  admin path. This replaces the out-of-band `AmazonSSMRoleForInstancesQuickSetup` profile the
+  running instances carried.
+
+### Changed
+
+- Locked down SSH ingress: removed the `TCP 22 from 0.0.0.0/0` rule from the WireGuard security
+  group. The tunnel (UDP `ServerPort`) is now the only inbound port. Admin access moves to SSM
+  Session Manager, which needs no open port.
+
+### Removed
+
+- The `KeyName` parameter and the instance's SSH key pair, fully committing admin access to SSM.
+  Note: `KeyName` is `UpdateRequires: Replacement`, so deploying this replaces the EC2 instance in
+  each region. The EIP stays associated and the DNS A record is static, so the public IP and
+  hostname survive the replacement; expect ~10-15 minutes of downtime per region while the new
+  instance runs `cfn-init` and rebuilds WireGuard from the (unchanged) stack parameters.
+
+### Fixed
+
+- Bootstrap on the 512 MB `t4g.nano` for current AL2023 AMIs: create the swap file at the top of
+  UserData (before the first `yum`) and size it at 2 GB, guard the redundant `aws-cfn-bootstrap`
+  install (it ships preinstalled on AL2023), and raise the `CreationPolicy` timeout to 20 minutes.
+  Newer AL2023 first-boot `dnf` swap-thrashes on 512 MB, stretching the bootstrap to ~10-15
+  minutes; without these the instance OOM-killed `yum` (or timed out) and the deploy rolled back.
+
 ## [1.0.1] - 2026-08-23
 
 ### Removed
