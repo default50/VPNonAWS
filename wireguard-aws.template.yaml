@@ -298,6 +298,20 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      # Attaching any instance profile makes cfn-init/cfn-signal authenticate with
+      # these role credentials instead of CloudFormation's implicit stack-member
+      # path, so the role must be allowed to read its metadata and signal — without
+      # this the bootstrap dies at the first cfn-init call and the stack times out.
+      Policies:
+        - PolicyName: cfn-helper-access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStackResource
+                  - cloudformation:SignalResource
+                Resource: !Sub "arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*"
       Tags:
         - Key: Namespace
           Value: !Ref Namespace
@@ -329,8 +343,6 @@ Resources:
     Metadata:
       Comment: Install a WireGuard VPN instance
       AWS::CloudFormation::Init:
-        # ToDo: Configure regular security updates
-        # https://stackoverflow.com/a/46248515/1943898
         configSets:
           default:
             - wait_for_system
@@ -382,7 +394,7 @@ Resources:
           commands:
             0_enable_swap:
               command: |
-                /usr/bin/fallocate -l 1G /var/spool/swap
+                /usr/bin/fallocate -l 2G /var/spool/swap
                 chmod 0600 /var/spool/swap
                 mkswap /var/spool/swap
                 swapon /var/spool/swap
@@ -827,7 +839,7 @@ Resources:
     DependsOn: IPAddress
     CreationPolicy:
       ResourceSignal:
-        Timeout: PT5M
+        Timeout: PT20M
     Properties:
       ImageId: !Ref LatestAmiId
       InstanceType: !Ref InstanceType
@@ -849,12 +861,22 @@ Resources:
         - Key: Name
           Value: !Sub "${Namespace}:WireGuard"
       UserData:
-        # ToDo: migrate script to cloud-init
-        # https://cloudinit.readthedocs.io/en/latest/topics/examples.html
         Fn::Base64: !Sub |+
           #!/bin/bash -xe
+          # Create swap before the first yum: t4g.nano (512MB) OOM-kills the
+          # first-boot dnf (cold repo metadata) on newer AL2023 AMIs, which runs
+          # before cfn-init's create_swap configset. The configset's test guard
+          # skips cleanly since the file already exists.
+          if [ ! -e /var/spool/swap ]; then
+            fallocate -l 2G /var/spool/swap
+            chmod 600 /var/spool/swap
+            mkswap /var/spool/swap
+            swapon /var/spool/swap
+          fi
           PATH=/opt/aws/bin:/usr/local/bin:$PATH
-          yum install -y aws-cfn-bootstrap  # available since al2022-ami-2022.0.20220728
+          # aws-cfn-bootstrap ships preinstalled on AL2023; only install (paying the
+          # dnf metadata load) if the cfn helper scripts are actually missing.
+          command -v cfn-init >/dev/null 2>&1 || yum install -y aws-cfn-bootstrap
           cfn-init -v \
             --stack ${AWS::StackName} \
             --resource VPNInstance \
