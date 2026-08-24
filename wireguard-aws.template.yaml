@@ -9,7 +9,6 @@ Metadata:
           default: "AWS Configuration"
         Parameters:
           - InstanceType
-          - KeyName
           - HostedZoneName
           - LatestAmiId
           - CIDRBlock
@@ -57,10 +56,6 @@ Parameters:
     Description: EC2 Instance Type
     Type: String
     Default: c8g.medium
-
-  KeyName:
-    Description: "SSH Key Name"
-    Type: AWS::EC2::KeyPair::KeyName
 
   HostedZoneName:
     Description: '[Optional] Create a record like "wireguard.eu-west-1." for your Hosted Zone'
@@ -281,14 +276,37 @@ Resources:
       VpcId: !Ref VPC
       GroupDescription: Security group for WireGuard Server
       SecurityGroupIngress:
+        # WireGuard tunnel (UDP). This is the only inbound port the server needs.
         - IpProtocol: udp
           FromPort: !Ref ServerPort
           ToPort: !Ref ServerPort
           CidrIp: "0.0.0.0/0"
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: "0.0.0.0/0"
+        # No inbound SSH (TCP 22): admin access is via SSM Session Manager, which
+        # needs no open port (see InstanceRole / InstanceProfile below).
+
+  # Admin access without an open port: SSM Session Manager. The agent ships with
+  # AL2023 and reaches SSM over outbound HTTPS, so no inbound rule is required.
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      Tags:
+        - Key: Namespace
+          Value: !Ref Namespace
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
 
   LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
@@ -813,7 +831,9 @@ Resources:
     Properties:
       ImageId: !Ref LatestAmiId
       InstanceType: !Ref InstanceType
-      KeyName: !Ref KeyName
+      # No SSH key pair: admin access is via SSM Session Manager (see InstanceRole
+      # / InstanceProfile). TCP 22 is closed, so no key-based login is possible.
+      IamInstanceProfile: !Ref InstanceProfile
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber

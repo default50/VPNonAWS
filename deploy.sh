@@ -29,6 +29,7 @@ function deploy {
                     --template-file ${1} \
                     --stack-name ${stack_name} \
                     --no-execute-changeset \
+                    --capabilities CAPABILITY_IAM \
                     --tags Namespace=${NAMESPACE} auto-start=no auto-stop=no auto-delete=no"
     
     # If 4th argument to this function is not empty, then append new argument for command
