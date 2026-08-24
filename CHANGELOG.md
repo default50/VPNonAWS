@@ -11,6 +11,11 @@ and tooling rather than a shipped software artifact.
 
 ## [Unreleased]
 
+### Removed
+
+- The OpenVPN path, retired for good: deleted `openvpn-aws.template.yaml` and `OpenVPN-AMIs.sh`,
+  and removed the stale `openvpn_improvements` branch. WireGuard is now the only VPN option.
+
 ## [1.0.0] - 2026-08-23
 
 First tagged release. Establishes the repo's tooling and documentation baseline around the

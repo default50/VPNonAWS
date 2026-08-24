@@ -9,14 +9,6 @@ How this file works:
 
 ## Active backlog
 
-### Cleanup
-
-- [ ] **Retire OpenVPN entirely.** OpenVPN is no longer used and won't be again. Remove the
-      OpenVPN path once and for all: delete `openvpn-aws.template.yaml` and `OpenVPN-AMIs.sh`,
-      drop the OpenVPN mentions from `README.md`, and delete the stale `openvpn_improvements`
-      branch (local + remote). Check the account first for any lingering OpenVPN CloudFormation
-      stacks / EC2 / EIPs and tear them down (confirm-first, they may already be gone).
-
 ### Hardening
 
 - [ ] **Lock down SSH ingress.** The WireGuard security group opens TCP 22 to `0.0.0.0/0`.
@@ -53,9 +45,12 @@ How this file works:
 
 Shipped work, newest first. Full detail in `CHANGELOG.md` + git history.
 
-- **Repo modernization** (Unreleased) — added a `.kiro/` steering context file (gitignored), a
+- **Retire OpenVPN entirely** (Unreleased) — deleted `openvpn-aws.template.yaml` and
+  `OpenVPN-AMIs.sh`, and removed the stale `openvpn_improvements` branch. WireGuard is now the
+  only VPN path.
+- **Repo modernization** (1.0.0) — added a `.kiro/` steering context file (gitignored), a
   `cfn-lint` pre-commit hook under `.githooks/`, this `BACKLOG.md`, and `CHANGELOG.md`. Removed a
-  redundant `DependsOn: IPAddress` in the OpenVPN template to get a clean lint.
+  redundant `DependsOn: IPAddress` in the (now-removed) OpenVPN template to get a clean lint.
 
 ## Decisions on record
 
