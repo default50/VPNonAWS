@@ -11,6 +11,8 @@ and tooling rather than a shipped software artifact.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-08-23
+
 ### Removed
 
 - The OpenVPN path, retired for good: deleted `openvpn-aws.template.yaml` and `OpenVPN-AMIs.sh`,
@@ -43,5 +45,6 @@ existing WireGuard-on-AWS CloudFormation templates and `deploy.sh`.
   (`cfn-lint` W3005 — the dependency is already implied by the `${IPAddress}` `Ref` in UserData).
   Cleared the one lint finding so the new pre-commit hook passes.
 
-[Unreleased]: https://github.com/default50/VPNonAWS/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/default50/VPNonAWS/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/default50/VPNonAWS/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/default50/VPNonAWS/releases/tag/v1.0.0
