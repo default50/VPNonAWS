@@ -11,6 +11,8 @@ and tooling rather than a shipped software artifact.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-25
+
 ### Added
 
 - `InstanceRole` (`AWS::IAM::Role` with the `AmazonSSMManagedInstanceCore` managed policy, plus an
@@ -76,6 +78,7 @@ existing WireGuard-on-AWS CloudFormation templates and `deploy.sh`.
   (`cfn-lint` W3005 — the dependency is already implied by the `${IPAddress}` `Ref` in UserData).
   Cleared the one lint finding so the new pre-commit hook passes.
 
-[Unreleased]: https://github.com/default50/VPNonAWS/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/default50/VPNonAWS/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/default50/VPNonAWS/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/default50/VPNonAWS/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/default50/VPNonAWS/releases/tag/v1.0.0

@@ -65,11 +65,11 @@ catching a doomed instance.
 
 Shipped work, newest first. Full detail in `CHANGELOG.md` + git history.
 
-- **Lock down SSH ingress** (Unreleased) — dropped the `TCP 22 from 0.0.0.0/0` rule and the
+- **Lock down SSH ingress** (1.1.0) — dropped the `TCP 22 from 0.0.0.0/0` rule and the
   `KeyName` key pair from the WireGuard template; admin access is now SSM Session Manager, backed
   by a template-managed IAM role + instance profile. No open admin port. Deploying replaces the
   instances (`KeyName` change), but EIP + static DNS survive.
-- **Retire OpenVPN entirely** (Unreleased) — deleted `openvpn-aws.template.yaml` and
+- **Retire OpenVPN entirely** (1.0.1) — deleted `openvpn-aws.template.yaml` and
   `OpenVPN-AMIs.sh`, and removed the stale `openvpn_improvements` branch. WireGuard is now the
   only VPN path.
 - **Repo modernization** (1.0.0) — added a `.kiro/` steering context file (gitignored), a
